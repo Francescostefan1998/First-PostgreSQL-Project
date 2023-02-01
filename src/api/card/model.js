@@ -3,7 +3,7 @@ import { DataTypes } from "sequelize";
 
 import sequelize from "../../db.js";
 
-const CardModel = sequelize.define("card", {
+const ProductModel = sequelize.define("card", {
   id: {
     type: DataTypes.UUID,
     primaryKey: true,
@@ -31,4 +31,4 @@ const CardModel = sequelize.define("card", {
   },
 });
 
-export default CardModel;
+export default ProductModel;
