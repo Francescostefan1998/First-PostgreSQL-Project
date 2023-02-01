@@ -1,7 +1,7 @@
 import express from "express";
 import createHttpError from "http-errors";
 import CardModel from "./model.js";
-
+import { Op } from "sequelize";
 const cardRouter = express.Router();
 
 cardRouter.post("/", async (req, res, next) => {
@@ -15,7 +15,12 @@ cardRouter.post("/", async (req, res, next) => {
 
 cardRouter.get("/", async (req, res, next) => {
   try {
-    const response = await CardModel.findAll();
+    const query = {};
+    if (req.query.name) query.name = { [Op.iLike]: `%${req.query.name}%` };
+    if (req.query.category)
+      query.category = { [Op.iLike]: `%${req.query.category}%` };
+    if (req.query.price) query.price = { [Op.lt]: `${req.query.price}` };
+    const response = await CardModel.findAll({ where: { ...query } });
     res.send(response);
   } catch (error) {
     next(error);
