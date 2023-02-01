@@ -15,12 +15,21 @@ productRouter.post("/", async (req, res, next) => {
 
 productRouter.get("/", async (req, res, next) => {
   try {
+    console.log(req.query.price);
     const query = {};
     if (req.query.name) query.name = { [Op.iLike]: `%${req.query.name}%` };
     if (req.query.category)
       query.category = { [Op.iLike]: `%${req.query.category}%` };
-    if (req.query.price) query.price = { [Op.lt]: req.query.price };
-    if (req.query.price) query.price = { [Op.gt]: req.query.price };
+    if (req.query.price.min)
+      query.price = {
+        ...query.price,
+        [Op.gte]: req.query.price["min"],
+      };
+    if (req.query.price.max)
+      query.price = {
+        ...query.price,
+        [Op.lte]: req.query.price["max"],
+      };
 
     const response = await ProductModel.findAll({ where: { ...query } });
     res.send(response);
