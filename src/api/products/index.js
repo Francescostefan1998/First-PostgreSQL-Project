@@ -32,12 +32,12 @@ productRouter.get("/", async (req, res, next) => {
     if (req.query.name) query.name = { [Op.iLike]: `%${req.query.name}%` };
     if (req.query.category)
       query.category = { [Op.iLike]: `%${req.query.category}%` };
-    if (req.query.price.min)
+    if (req.query.price)
       query.price = {
         ...query.price,
         [Op.gte]: req.query.price["min"],
       };
-    if (req.query.price.max)
+    if (req.query.price)
       query.price = {
         ...query.price,
         [Op.lte]: req.query.price["max"],
@@ -78,8 +78,9 @@ productRouter.put("/:productId/category", async (req, res, next) => {
   try {
     const { id } = await PoroductsCategoriesModel.create({
       productId: req.params.productId,
-      categoryId: req.params.categoryId,
+      categoryId: req.body.categoryId,
     });
+    res.status(201).send({ id });
   } catch (error) {
     next(error);
   }
