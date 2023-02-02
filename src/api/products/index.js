@@ -4,6 +4,7 @@ import ProductModel from "./model.js";
 import { Op } from "sequelize";
 import CategoriesModel from "../categories/model.js";
 import PoroductsCategoriesModel from "./productsCategoryModel.js";
+import ReviewsModel from "../reviews/model.js";
 
 const productRouter = express.Router();
 
@@ -70,6 +71,20 @@ productRouter.get("/:productId", async (req, res, next) => {
         createHttpError(404, `Card with id ${req.params.productId} not found`)
       );
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+productRouter.get("/:productId/reviews", async (req, res, next) => {
+  try {
+    const user = await ProductModel.findByPk(req.params.productId, {
+      include: {
+        model: ReviewsModel,
+        attributes: ["comment"],
+      },
+    });
+    res.send(user);
   } catch (error) {
     next(error);
   }
