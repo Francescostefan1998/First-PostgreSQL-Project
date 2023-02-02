@@ -2,9 +2,12 @@ import express from "express";
 import cors from "cors";
 import listEndpoints from "express-list-endpoints";
 import { pgConnect, syncModels } from "./db.js";
-import productRouter from "./api/card/index.js";
+import productRouter from "./api/products/index.js";
+import categoryRouter from "./api/categories/index.js";
+
 import {
   unauthorizedErrorHandler,
+  badRequestErrorHandler,
   forbiddenErrorHandler,
   notFoundErrorHandler,
   genericErrorHandler,
@@ -15,6 +18,9 @@ const port = process.env.PORT || 3001;
 server.use(cors());
 server.use(express.json());
 server.use("/products", productRouter);
+server.use("/categories", categoryRouter);
+server.use(badRequestErrorHandler);
+
 server.use(unauthorizedErrorHandler);
 server.use(forbiddenErrorHandler);
 server.use(notFoundErrorHandler);

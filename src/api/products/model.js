@@ -3,7 +3,7 @@ import { DataTypes } from "sequelize";
 
 import sequelize from "../../db.js";
 
-const ProductModel = sequelize.define("card", {
+const ProductModel = sequelize.define("product", {
   id: {
     type: DataTypes.UUID,
     primaryKey: true,

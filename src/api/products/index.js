@@ -2,17 +2,29 @@ import express from "express";
 import createHttpError from "http-errors";
 import ProductModel from "./model.js";
 import { Op } from "sequelize";
+import CategoriesModel from "../categories/model.js";
+import PoroductsCategoriesModel from "./productsCategoryModel.js";
+
 const productRouter = express.Router();
 
 productRouter.post("/", async (req, res, next) => {
   try {
-    const response = await ProductModel.create(req.body);
-    res.status(201).send({ response });
+    const { productId } = await ProductModel.create(req.body);
+    if (req.body.categories) {
+      await PoroductsCategoriesModel.bulkCreate(
+        req.body.categories.map((category) => {
+          return {
+            categoryId: category,
+            productId,
+          };
+        })
+      );
+    }
+    res.status(201).send({ id: productId });
   } catch (error) {
     next(error);
   }
 });
-
 productRouter.get("/", async (req, res, next) => {
   try {
     console.log(req.query.price);
@@ -31,7 +43,16 @@ productRouter.get("/", async (req, res, next) => {
         [Op.lte]: req.query.price["max"],
       };
 
-    const response = await ProductModel.findAll({ where: { ...query } });
+    const response = await ProductModel.findAll({
+      include: [
+        {
+          model: CategoriesModel,
+          attributes: ["name"],
+          through: { attributes: [] },
+        },
+      ],
+      where: { ...query },
+    });
     res.send(response);
   } catch (error) {
     next(error);
@@ -49,6 +70,16 @@ productRouter.get("/:productId", async (req, res, next) => {
         createHttpError(404, `Card with id ${req.params.productId} not found`)
       );
     }
+  } catch (error) {
+    next(error);
+  }
+});
+productRouter.put("/:productId/category", async (req, res, next) => {
+  try {
+    const { id } = await PoroductsCategoriesModel.create({
+      productId: req.params.productId,
+      categoryId: req.params.categoryId,
+    });
   } catch (error) {
     next(error);
   }
