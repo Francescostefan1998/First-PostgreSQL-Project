@@ -45,8 +45,11 @@ productRouter.get("/", async (req, res, next) => {
 
     const limit = parseInt(req.query.limit) || 10;
     const offset = parseInt(req.query.offset) || 0;
+    const page = parseInt(req.query.page) || 1;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
     if (req.query.categories) {
-      const response = await ProductModel.findAll({
+      const items = await ProductModel.findAll({
         include: [
           {
             model: CategoriesModel,
@@ -60,12 +63,37 @@ productRouter.get("/", async (req, res, next) => {
           },
         ],
         where: { ...query },
-        limit,
-        offset,
+        limit: limit,
+        offset: offset,
       });
+      const totalItems = await ProductModel.count({
+        include: [
+          {
+            model: CategoriesModel,
+            attributes: ["name", "categoryId"],
+            through: { attributes: [] },
+            where: {
+              name: {
+                [Op.iLike]: `%${req.query.categories}%`,
+              },
+            },
+          },
+        ],
+        where: { ...query },
+      });
+      const totalPages = Math.ceil(totalItems / limit);
+      const response = {
+        currentPage: page,
+        totalPages: totalPages,
+        totalItems: totalItems,
+        limit: limit,
+        page: offset + 1,
+
+        products: items,
+      };
       res.send(response);
     } else {
-      const response = await ProductModel.findAll({
+      const items = await ProductModel.findAll({
         include: [
           {
             model: CategoriesModel,
@@ -74,9 +102,31 @@ productRouter.get("/", async (req, res, next) => {
           },
         ],
         where: { ...query },
-        limit,
-        offset,
+        limit: limit,
+        offset: offset,
       });
+      const totalItems = await ProductModel.count({
+        include: [
+          {
+            model: CategoriesModel,
+            attributes: ["name", "categoryId"],
+            through: { attributes: [] },
+          },
+        ],
+        where: { ...query },
+      });
+
+      const totalPages = Math.ceil(totalItems / limit);
+
+      const response = {
+        currentPage: page,
+        totalPages: totalPages,
+        totalItems: totalItems,
+        limit: limit,
+        page: offset + 1,
+
+        products: items,
+      };
       res.send(response);
     }
   } catch (error) {
