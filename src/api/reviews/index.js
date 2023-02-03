@@ -30,4 +30,54 @@ reviewsRouter.get("/", async (req, res, next) => {
   }
 });
 
+reviewsRouter.get("/:reviewId", async (req, res, next) => {
+  try {
+    const card = await ReviewsModel.findByPk(req.params.reviewId);
+    if (card) {
+      res.send(card);
+    } else {
+      next(
+        createHttpError(404, `Review with id ${req.params.reviewId} not found`)
+      );
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+reviewsRouter.put("/:reviewId", async (req, res, next) => {
+  try {
+    const [line, response] = await ReviewsModel.update(req.body, {
+      where: { reviewId: req.params.reviewId },
+      returning: true,
+    });
+    if (line === 1) {
+      res.send(response[0]);
+    } else {
+      next(
+        createHttpError(404, `Review with id ${req.params.reviewId} not found`)
+      );
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+reviewsRouter.delete("/:reviewId", async (req, res, next) => {
+  try {
+    const review = await ReviewsModel.destroy({
+      where: { reviewId: req.params.reviewId },
+    });
+    if (review === 1) {
+      res.status(204).send("review successfully deleted");
+    } else {
+      next(
+        createHttpError(404, `Review with id ${req.params.reviewId} not found`)
+      );
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default reviewsRouter;

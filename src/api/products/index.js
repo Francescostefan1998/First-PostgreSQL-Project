@@ -5,7 +5,8 @@ import { Op } from "sequelize";
 import CategoriesModel from "../categories/model.js";
 import PoroductsCategoriesModel from "./productsCategoryModel.js";
 import ReviewsModel from "../reviews/model.js";
-
+import CardItemModel from "../cards/model.js";
+import UsersModel from "../users/model.js";
 const productRouter = express.Router();
 
 productRouter.post("/", async (req, res, next) => {
@@ -31,8 +32,6 @@ productRouter.get("/", async (req, res, next) => {
     console.log(req.query.price);
     const query = {};
     if (req.query.name) query.name = { [Op.iLike]: `%${req.query.name}%` };
-    if (req.query.category)
-      query.category = { [Op.iLike]: `%${req.query.category}%` };
     if (req.query.price)
       query.price = {
         ...query.price,
@@ -44,17 +43,42 @@ productRouter.get("/", async (req, res, next) => {
         [Op.lte]: req.query.price["max"],
       };
 
-    const response = await ProductModel.findAll({
-      include: [
-        {
-          model: CategoriesModel,
-          attributes: ["name"],
-          through: { attributes: [] },
-        },
-      ],
-      where: { ...query },
-    });
-    res.send(response);
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = parseInt(req.query.offset) || 0;
+    if (req.query.categories) {
+      const response = await ProductModel.findAll({
+        include: [
+          {
+            model: CategoriesModel,
+            attributes: ["name", "categoryId"],
+            through: { attributes: [] },
+            where: {
+              name: {
+                [Op.iLike]: `%${req.query.categories}%`,
+              },
+            },
+          },
+        ],
+        where: { ...query },
+        limit,
+        offset,
+      });
+      res.send(response);
+    } else {
+      const response = await ProductModel.findAll({
+        include: [
+          {
+            model: CategoriesModel,
+            attributes: ["name", "categoryId"],
+            through: { attributes: [] },
+          },
+        ],
+        where: { ...query },
+        limit,
+        offset,
+      });
+      res.send(response);
+    }
   } catch (error) {
     next(error);
   }
@@ -63,6 +87,34 @@ productRouter.get("/:productId", async (req, res, next) => {
   try {
     const card = await ProductModel.findByPk(req.params.productId, {
       attributes: { exclude: ["id"] },
+    });
+    if (card) {
+      res.send(card);
+    } else {
+      next(
+        createHttpError(404, `Card with id ${req.params.productId} not found`)
+      );
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+productRouter.get("/:productId/cardAdded", async (req, res, next) => {
+  try {
+    const card = await ProductModel.findByPk(req.params.productId, {
+      include: [
+        {
+          model: CardItemModel,
+          include: [
+            {
+              model: UsersModel,
+              attributes: ["firstName"],
+            },
+          ],
+
+          attributes: ["userId"],
+        },
+      ],
     });
     if (card) {
       res.send(card);
@@ -100,6 +152,26 @@ productRouter.put("/:productId/category", async (req, res, next) => {
     next(error);
   }
 });
+productRouter.delete(
+  "/:productId/category/:categoryName",
+  async (req, res, next) => {
+    try {
+      const category = await CategoriesModel.findOne({
+        where: { name: req.params.categoryName },
+      });
+      const response = await PoroductsCategoriesModel.destroy({
+        where: {
+          productId: req.params.productId,
+          categoryId: category.categoryId,
+        },
+      });
+
+      res.status(201).send("category successfully removed");
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 productRouter.put("/:productId", async (req, res, next) => {
   try {
     const [line, response] = await ProductModel.update(req.body, {
@@ -124,10 +196,13 @@ productRouter.delete("/:productId", async (req, res, next) => {
     });
 
     if (response === 1) {
-      res.status(204).send("Cars deleted successfully");
+      res.status(204).send("Product deleted successfully");
     } else {
       next(
-        createHttpError(404, `Card with id ${req.params.productId} not found`)
+        createHttpError(
+          404,
+          `Product with id ${req.params.productId} not found`
+        )
       );
     }
   } catch (error) {

@@ -3,7 +3,8 @@ import createHttpError from "http-errors";
 import { Op } from "sequelize";
 import UsersModel from "./model.js";
 import ReviewsModel from "../reviews/model.js";
-
+import CardItemModel from "../cards/model.js";
+import ProductModel from "../products/model.js";
 const userRouter = express.Router();
 
 userRouter.post("/", async (req, res, next) => {
@@ -83,6 +84,42 @@ userRouter.get("/:userId/reviews", async (req, res, next) => {
       },
     });
     res.send(user);
+  } catch (error) {
+    next(error);
+  }
+});
+
+userRouter.get("/:userId/card", async (req, res, next) => {
+  try {
+    const card = await UsersModel.findByPk(req.params.userId, {
+      include: [
+        {
+          model: CardItemModel,
+          include: [
+            {
+              model: ProductModel,
+              attributes: ["name"],
+            },
+          ],
+
+          attributes: ["productProductId"],
+        },
+      ],
+    });
+    res.send(card);
+  } catch (error) {
+    next(error);
+  }
+});
+
+userRouter.get("/:userId/cardItems", async (req, res, next) => {
+  try {
+    const card = await UsersModel.findByPk(req.params.userId, {
+      include: {
+        model: CardItemModel,
+      },
+    });
+    res.send(card);
   } catch (error) {
     next(error);
   }

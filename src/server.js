@@ -6,6 +6,7 @@ import productRouter from "./api/products/index.js";
 import categoryRouter from "./api/categories/index.js";
 import userRouter from "./api/users/index.js";
 import reviewsRouter from "./api/reviews/index.js";
+import cardItemRouter from "./api/cards/index.js";
 import {
   unauthorizedErrorHandler,
   badRequestErrorHandler,
@@ -22,6 +23,7 @@ server.use("/products", productRouter);
 server.use("/categories", categoryRouter);
 server.use("/users", userRouter);
 server.use("/reviews", reviewsRouter);
+server.use("/cardItems", cardItemRouter);
 server.use(badRequestErrorHandler);
 
 server.use(unauthorizedErrorHandler);
